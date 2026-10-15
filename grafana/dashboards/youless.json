@@ -1,0 +1,1055 @@
+{
+  "uid": "youless-tig",
+  "title": "YouLess",
+  "tags": [
+    "youless",
+    "energy"
+  ],
+  "timezone": "browser",
+  "editable": true,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "version": 1,
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Data source",
+        "type": "datasource",
+        "query": "influxdb",
+        "current": {},
+        "hide": 0,
+        "refresh": 1,
+        "regex": "",
+        "includeAll": false,
+        "multi": false,
+        "options": []
+      },
+      {
+        "name": "device",
+        "label": "YouLess",
+        "type": "query",
+        "datasource": {
+          "type": "influxdb",
+          "uid": "${datasource}"
+        },
+        "query": "SHOW TAG VALUES FROM \"youless_electricity\" WITH KEY = \"device\"",
+        "definition": "SHOW TAG VALUES FROM \"youless_electricity\" WITH KEY = \"device\"",
+        "refresh": 1,
+        "includeAll": false,
+        "multi": false,
+        "current": {},
+        "options": [],
+        "sort": 1,
+        "hide": 0
+      },
+      {
+        "name": "timezone",
+        "label": "Time zone (daily totals)",
+        "type": "textbox",
+        "query": "Europe/Brussels",
+        "current": {
+          "text": "Europe/Brussels",
+          "value": "Europe/Brussels"
+        },
+        "hide": 0,
+        "options": [
+          {
+            "selected": true,
+            "text": "Europe/Brussels",
+            "value": "Europe/Brussels"
+          }
+        ]
+      }
+    ]
+  },
+  "annotations": {
+    "list": []
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "row",
+      "title": "Now",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Power now",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT last(\"power_w\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND time > now() - 5m",
+          "rawQuery": true,
+          "resultFormat": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "orange"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "description": "Net power: positive is taken from the grid, negative is sent back."
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Import today",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 4,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT spread(\"import_t1_kwh\") + spread(\"import_t2_kwh\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "red"
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "timeFrom": "now/d"
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Export today",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 8,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT spread(\"export_t1_kwh\") + spread(\"export_t2_kwh\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "green"
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "timeFrom": "now/d"
+    },
+    {
+      "id": 5,
+      "type": "stat",
+      "title": "Gas today",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT spread(\"total_m3\") FROM \"youless_gas\" WHERE \"device\" =~ /^$device$/ AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m3",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "yellow"
+          },
+          "decimals": 3
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "timeFrom": "now/d"
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Water today",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT spread(\"total_m3\") * 1000 FROM \"youless_water\" WHERE \"device\" =~ /^$device$/ AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "litre",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "timeFrom": "now/d"
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Capacity peak this month",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT last(\"capacity_peak_w\") / 1000 FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND time > now() - 1h",
+          "rawQuery": true,
+          "resultFormat": "time_series"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatt",
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "purple"
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "colorMode": "value",
+        "graphMode": "none",
+        "textMode": "value",
+        "justifyMode": "auto",
+        "orientation": "auto"
+      },
+      "description": "Highest quarter-hour average power this month (Belgian capacity tariff). Empty elsewhere."
+    },
+    {
+      "id": 8,
+      "type": "row",
+      "title": "Power",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 9,
+      "type": "timeseries",
+      "title": "Net power",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 6,
+        "w": 16,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT mean(\"power_w\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "net"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 10,
+      "type": "timeseries",
+      "title": "Power per phase",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 6,
+        "w": 8,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT mean(\"power_l1_w\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L1"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "B",
+          "query": "SELECT mean(\"power_l2_w\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L2"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "C",
+          "query": "SELECT mean(\"power_l3_w\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L3"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Voltage",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT mean(\"voltage_l1_v\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L1"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "B",
+          "query": "SELECT mean(\"voltage_l2_v\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L2"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "C",
+          "query": "SELECT mean(\"voltage_l3_v\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L3"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "volt",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "decimals": 1
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "timeseries",
+      "title": "Current",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 14,
+        "w": 12,
+        "h": 7
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT mean(\"current_l1_a\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L1"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "B",
+          "query": "SELECT mean(\"current_l2_a\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L2"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "C",
+          "query": "SELECT mean(\"current_l3_a\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time($__interval) fill(null)",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "L3"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "amp",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": 0
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "row",
+      "title": "History (from the YouLess logs)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 21,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 14,
+      "type": "timeseries",
+      "title": "Electricity per day (net)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT \"value\" FROM \"youless_log\" WHERE \"device\" =~ /^$device$/ AND \"channel\" = 'electricity' AND \"resolution\" = 'day' AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "net kWh"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": -1
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "timeFrom": "90d",
+      "description": "The YouLess day log: net consumption per day, negative when more was sent back than taken."
+    },
+    {
+      "id": 15,
+      "type": "timeseries",
+      "title": "Import and export per day",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT spread(\"import_t1_kwh\") + spread(\"import_t2_kwh\") FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time(1d) fill(none) tz('$timezone')",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "import"
+        },
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "B",
+          "query": "SELECT -1 * (spread(\"export_t1_kwh\") + spread(\"export_t2_kwh\")) FROM \"youless_electricity\" WHERE \"device\" =~ /^$device$/ AND $timeFilter GROUP BY time(1d) fill(none) tz('$timezone')",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "export"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": -1
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "timeFrom": "30d",
+      "description": "From the P1 meter readings youless-tig stores, so it starts on the day youless-tig was first started."
+    },
+    {
+      "id": 16,
+      "type": "timeseries",
+      "title": "Electricity per hour",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 30,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT \"value\" / 1000 FROM \"youless_log\" WHERE \"device\" =~ /^$device$/ AND \"channel\" = 'electricity' AND \"resolution\" = 'hour' AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "net kWh"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "kwatth",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": -1
+          },
+          "decimals": 2
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "timeFrom": "7d"
+    },
+    {
+      "id": 17,
+      "type": "timeseries",
+      "title": "Gas per day",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 38,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT \"value\" FROM \"youless_log\" WHERE \"device\" =~ /^$device$/ AND \"channel\" = 'gas' AND \"resolution\" = 'day' AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "m³"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "m3",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": -1
+          },
+          "decimals": 3
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "timeFrom": "90d"
+    },
+    {
+      "id": 18,
+      "type": "timeseries",
+      "title": "Water per day",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 38,
+        "w": 12,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT \"value\" * 1000 FROM \"youless_log\" WHERE \"device\" =~ /^$device$/ AND \"channel\" = 'water' AND \"resolution\" = 'day' AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "litre"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "litre",
+          "custom": {
+            "drawStyle": "bars",
+            "lineWidth": 1,
+            "fillOpacity": 80,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": -1
+          },
+          "decimals": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "timeFrom": "90d"
+    },
+    {
+      "id": 19,
+      "type": "timeseries",
+      "title": "Net power per minute (long-term)",
+      "datasource": {
+        "type": "influxdb",
+        "uid": "${datasource}"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 46,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "influxdb",
+            "uid": "${datasource}"
+          },
+          "refId": "A",
+          "query": "SELECT \"value\" FROM \"youless_log\" WHERE \"device\" =~ /^$device$/ AND \"channel\" = 'electricity' AND \"resolution\" = 'minute' AND $timeFilter",
+          "rawQuery": true,
+          "resultFormat": "time_series",
+          "alias": "W"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "watt",
+          "custom": {
+            "drawStyle": "line",
+            "lineWidth": 1,
+            "fillOpacity": 10,
+            "showPoints": "never",
+            "spanNulls": false,
+            "barAlignment": 0
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "timeFrom": "2d",
+      "description": "The YouLess minute log, kept for as long as InfluxDB keeps data."
+    }
+  ]
+}

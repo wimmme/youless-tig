@@ -1,0 +1,16 @@
+# Your settings and secrets
+.env
+
+# Binaries
+/youless-tig
+/youless-sim
+*.exe
+
+# Machine-specific notes for Claude Code
+CLAUDE.local.md
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

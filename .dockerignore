@@ -1,0 +1,5 @@
+.git
+.github
+.env
+*.exe
+CLAUDE.local.md

@@ -1,0 +1,19 @@
+# Changelog
+
+All notable changes. Format based on [Keep a Changelog](https://keepachangelog.com/);
+versions follow [Semantic Versioning](https://semver.org/).
+
+## [Unreleased]
+
+### Added
+- Reads a YouLess LS120: live readings every 10 seconds (power, P1 import and
+  export per tariff, voltage, current and power per phase, the Belgian capacity
+  peak, gas, water, S0) and the device's minute, 10-minute, hour and day logs.
+- Stores everything in InfluxDB 2, directly or through Telegraf; on the first
+  start the device's whole history is read, later gaps are filled from its logs.
+- YouLess-compatible API (`/d`, `/e`, `/f`, `/a`, `/V`, `/W`, `/K`, `/Z`) that
+  answers like the device, with log pages reaching back as far as the stored data.
+- `docker-compose.yml` for an existing InfluxDB, `docker-compose.stack.yml` with
+  Telegraf, InfluxDB and Grafana, least-privilege tokens created on first start,
+  and a provisioned Grafana dashboard.
+- YouLess password support (login with cookie).

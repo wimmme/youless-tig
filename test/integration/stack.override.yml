@@ -1,0 +1,60 @@
+# Integration test: the real stack (docker-compose.stack.yml) with the simulated
+# YouLess instead of a device, a locally built youless-tig, no fixed container
+# names and no published ports. Run it with tools/integration.sh.
+# Relative paths are relative to the repository root (the first compose file).
+services:
+  youless-sim:
+    build:
+      context: .
+      target: sim
+    environment:
+      TZ: ${TZ}
+
+  youless-tig:
+    image: youless-tig:it
+    build: .
+    container_name: !reset null
+    ports: !reset []
+    depends_on:
+      youless-sim:
+        condition: service_started
+    environment:
+      YOULESS_URL: http://youless-sim:8081
+
+  telegraf:
+    container_name: !reset null
+
+  influxdb:
+    container_name: !reset null
+    ports: !reset []
+
+  grafana:
+    container_name: !reset null
+    ports: !reset []
+
+  # Runs the Go tests in test/integration against the running stack.
+  tester:
+    image: golang:1.27
+    profiles: [test]
+    working_dir: /src
+    command: ["go", "test", "-tags", "integration", "-count=1", "-v", "./test/integration/"]
+    environment:
+      TZ: ${TZ}
+      IT_API: http://youless-tig:8080
+      IT_SIM: http://youless-sim:8081
+      IT_INFLUX: http://influxdb:8086
+      IT_GRAFANA: http://grafana:3000
+      IT_GRAFANA_USER: ${GRAFANA_ADMIN_USER}
+      IT_GRAFANA_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      IT_ORG: ${INFLUX_ORG}
+      IT_BUCKET: ${INFLUX_BUCKET}
+      IT_SECRETS: /run/secrets
+    volumes:
+      - .:/src:ro
+      - secrets:/run/secrets:ro
+      - gocache:/root/.cache
+      - gomod:/go/pkg
+
+volumes:
+  gocache:
+  gomod:

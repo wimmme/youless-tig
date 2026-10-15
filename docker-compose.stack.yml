@@ -1,0 +1,141 @@
+# youless-tig with its own Telegraf, InfluxDB and Grafana: everything in one stack.
+# For an InfluxDB and Grafana you already run, use docker-compose.yml instead.
+#
+#   cp .env.example .env        then fill in the "stack" part of .env
+#   docker compose -f docker-compose.stack.yml up -d
+#
+# Data flow: YouLess ← youless-tig → Telegraf → InfluxDB ← Grafana
+#                         ↑ YouLess-compatible API (port YOULESS_TIG_PORT)
+#
+# On the first start InfluxDB creates the organisation, bucket and admin user from
+# .env and, through influxdb/init, one token per service with only the rights it
+# needs; the services read them from the "secrets" volume. See docs/stack.md.
+name: youless-tig
+
+services:
+  youless-tig:
+    image: ghcr.io/wimmme/youless-tig:${YOULESS_TIG_VERSION:-latest}
+    container_name: youless-tig
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+      telegraf:
+        condition: service_started
+    environment:
+      TZ: ${TZ:?set TZ in .env, the time zone of your YouLess (e.g. Europe/Brussels)}
+      YOULESS_URL: ${YOULESS_URL:?set YOULESS_URL in .env}
+      YOULESS_PASSWORD: ${YOULESS_PASSWORD:-}
+      DEVICE_NAME: ${DEVICE_NAME:-youless}
+      POLL_INTERVAL: ${POLL_INTERVAL:-10s}
+      CHANNELS: ${CHANNELS:-auto}
+      HISTORY: ${HISTORY:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Reads (the API's log pages) go straight to InfluxDB with a read-only token;
+      # writes go through Telegraf.
+      INFLUX_URL: http://influxdb:8086
+      INFLUX_TOKEN_FILE: /run/secrets/youless_tig_token
+      INFLUX_ORG: ${INFLUX_ORG:?set INFLUX_ORG in .env}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:?set INFLUX_BUCKET in .env}
+      INFLUX_WRITE_URL: http://telegraf:8186
+      INFLUX_WRITE_TOKEN_FILE: /run/secrets/telegraf_listener_token
+    volumes:
+      - secrets:/run/secrets:ro
+    ports:
+      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging: &logging
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  telegraf:
+    image: telegraf:1.40
+    container_name: youless-tig-telegraf
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    environment:
+      INFLUX_ORG: ${INFLUX_ORG}
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+    volumes:
+      - ./telegraf/telegraf.conf:/etc/telegraf/telegraf.conf:ro
+      - secrets:/run/secrets:ro
+    # No ports: only youless-tig sends to it, over the stack's network.
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+
+  influxdb:
+    image: influxdb:2.9
+    container_name: youless-tig-influxdb
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ}
+      DOCKER_INFLUXDB_INIT_MODE: setup
+      DOCKER_INFLUXDB_INIT_USERNAME: ${INFLUXDB_ADMIN_USER:-admin}
+      DOCKER_INFLUXDB_INIT_PASSWORD: ${INFLUXDB_ADMIN_PASSWORD:?set INFLUXDB_ADMIN_PASSWORD in .env (at least 8 characters)}
+      DOCKER_INFLUXDB_INIT_ORG: ${INFLUX_ORG}
+      DOCKER_INFLUXDB_INIT_BUCKET: ${INFLUX_BUCKET}
+      # Empty: keep data forever. Otherwise e.g. 520w (ten years).
+      DOCKER_INFLUXDB_INIT_RETENTION: ${INFLUXDB_RETENTION:-}
+      INFLUXD_REPORTING_DISABLED: "true"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+      - influxdb-config:/etc/influxdb2
+      - secrets:/etc/influxdb2/secrets
+      - ./influxdb/init:/docker-entrypoint-initdb.d:ro
+    ports:
+      # The InfluxDB web UI and API. Bound to localhost by default; set
+      # INFLUXDB_BIND=0.0.0.0 in .env to reach it from your LAN.
+      - "${INFLUXDB_BIND:-127.0.0.1}:${INFLUXDB_PORT:-8086}:8086"
+    healthcheck:
+      # Healthy once the tokens exist, so the others never start without them.
+      test: ["CMD-SHELL", "test -s /etc/influxdb2/secrets/telegraf_listener_token && influx ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+
+  grafana:
+    image: grafana/grafana:13.2
+    container_name: youless-tig-grafana
+    restart: unless-stopped
+    depends_on:
+      influxdb:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      INFLUX_BUCKET: ${INFLUX_BUCKET}
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+      GF_ANALYTICS_CHECK_FOR_PLUGIN_UPDATES: "false"
+      GF_NEWS_NEWS_FEED_ENABLED: "false"
+      # No plugin downloads at start-up: the stack needs only the built-in InfluxDB data source.
+      GF_PLUGINS_PREINSTALL_DISABLED: "true"
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/youless.json
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - secrets:/run/secrets:ro
+    ports:
+      - "${GRAFANA_BIND:-0.0.0.0}:${GRAFANA_PORT:-3000}:3000"
+    security_opt: ["no-new-privileges:true"]
+    logging: *logging
+
+volumes:
+  influxdb-data:
+  influxdb-config:
+  grafana-data:
+  # Tokens created on the first start; see influxdb/init/10-youless-tig.sh.
+  secrets:

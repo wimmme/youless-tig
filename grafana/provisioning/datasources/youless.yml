@@ -1,0 +1,18 @@
+# Grafana data source for the youless-tig stack: InfluxDB through InfluxQL with
+# a read-only token from the "secrets" volume (created by influxdb/init).
+apiVersion: 1
+
+datasources:
+  - name: InfluxDB youless
+    uid: youless-influxdb
+    type: influxdb
+    access: proxy
+    url: http://influxdb:8086
+    isDefault: true
+    editable: false
+    jsonData:
+      dbName: ${INFLUX_BUCKET}
+      httpMode: POST
+      httpHeaderName1: Authorization
+    secureJsonData:
+      httpHeaderValue1: Token $__file{/run/secrets/grafana_token}

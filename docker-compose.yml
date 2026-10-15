@@ -1,0 +1,45 @@
+# youless-tig alone, for an InfluxDB (2.x) and Grafana you already run.
+# For a complete stack with its own Telegraf, InfluxDB and Grafana, use
+# docker-compose.stack.yml.
+#
+#   cp .env.example .env        then fill in the "youless-tig" part of .env
+#   docker compose up -d
+#   docker compose logs -f      the first start reads the YouLess's whole history
+#
+# Update: docker compose pull && docker compose up -d
+# The token needs read and write access to the bucket: docs/influxdb.md.
+name: youless-tig
+
+services:
+  youless-tig:
+    image: ghcr.io/wimmme/youless-tig:${YOULESS_TIG_VERSION:-latest}
+    # Only used when you build from a clone of the repository (docker compose up -d --build).
+    build: .
+    container_name: youless-tig
+    restart: unless-stopped
+    environment:
+      TZ: ${TZ:?set TZ in .env, the time zone of your YouLess (e.g. Europe/Brussels)}
+      YOULESS_URL: ${YOULESS_URL:?set YOULESS_URL in .env}
+      YOULESS_PASSWORD: ${YOULESS_PASSWORD:-}
+      DEVICE_NAME: ${DEVICE_NAME:-youless}
+      POLL_INTERVAL: ${POLL_INTERVAL:-10s}
+      CHANNELS: ${CHANNELS:-auto}
+      HISTORY: ${HISTORY:-true}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      INFLUX_URL: ${INFLUX_URL:?set INFLUX_URL in .env}
+      INFLUX_TOKEN: ${INFLUX_TOKEN:?set INFLUX_TOKEN in .env}
+      INFLUX_ORG: ${INFLUX_ORG:?set INFLUX_ORG in .env}
+      INFLUX_BUCKET: ${INFLUX_BUCKET:?set INFLUX_BUCKET in .env}
+      # Send writes to your Telegraf (inputs.influxdb_v2_listener) instead of InfluxDB:
+      INFLUX_WRITE_URL: ${INFLUX_WRITE_URL:-}
+      INFLUX_WRITE_TOKEN: ${INFLUX_WRITE_TOKEN:-}
+    ports:
+      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
