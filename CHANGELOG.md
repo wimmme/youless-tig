@@ -5,6 +5,11 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Changed
+- Clearer explanation of ports: the API always listens on 8080 inside the
+  container, `YOULESS_TIG_PORT` only chooses the port on the Docker host
+  (`.env.example`, both compose files, docs/configuration.md).
+
 ## [0.1.0] - 2026-10-15
 
 First release.

@@ -24,10 +24,11 @@ Secrets can also be read from a file (a Docker secret, for instance): set
 | `INFLUX_BUCKET` | required | bucket |
 | `INFLUX_WRITE_URL` | empty | send writes here instead, e.g. Telegraf's `influxdb_v2_listener` |
 | `INFLUX_WRITE_TOKEN` | `INFLUX_TOKEN` | token for `INFLUX_WRITE_URL` |
-| `LISTEN` | `:8080` | address of the API inside the container |
+| `LISTEN` | `:8080` | address of the API; only when running the program outside Docker (see *Ports*) |
 | `LOG_LEVEL` | `info` | `debug`, `info`, `warn` or `error` |
 
-Only for the compose files (not read by youless-tig itself):
+Only for the compose files. youless-tig itself does not read these: never add
+them under youless-tig's `environment:`.
 
 | Variable | Default | |
 |---|---|---|
@@ -39,8 +40,39 @@ Only for the compose files (not read by youless-tig itself):
 | `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD` | `admin`, required | stack: Grafana login |
 | `GRAFANA_PORT`, `GRAFANA_BIND` | `3000`, `0.0.0.0` | stack: Grafana |
 
+## Ports
+
+Each container listens on a fixed port inside the container; the compose files
+publish it on a port of your Docker host that you choose in `.env`:
+
+| Service | Inside the container | On the host (`.env`) |
+|---|---|---|
+| youless-tig API | 8080 | `YOULESS_TIG_PORT` (default 8080) |
+| InfluxDB (stack) | 8086 | `INFLUXDB_PORT` (default 8086, localhost only) |
+| Grafana (stack) | 3000 | `GRAFANA_PORT` (default 3000) |
+
+With `YOULESS_TIG_PORT=8030` the compose file's line
+
+```yaml
+    ports:
+      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
+```
+
+becomes `0.0.0.0:8030:8080`: the API is at `http://<docker host>:8030/e`, while
+youless-tig still listens on 8080 inside. So:
+
+- To change the port, change only `YOULESS_TIG_PORT` in `.env`, then `docker compose up -d`.
+- Do not add `YOULESS_TIG_PORT` under `environment:`; youless-tig does not read it.
+- Leave `LISTEN` alone in Docker: changing it moves the port inside the container,
+  and the `:8080` of the mapping would then point at nothing.
+
+Containers of the stack talk to each other over the stack's own network with the
+inside ports (`http://influxdb:8086`, `http://telegraf:8186`); the host ports do
+not matter for them.
+
 ## More than one YouLess
 
 Run one youless-tig container per YouLess, each with its own `DEVICE_NAME`,
-`YOULESS_URL` and API port, writing to the same bucket. The dashboard's
+`YOULESS_URL` and `YOULESS_TIG_PORT` (and a different `container_name`), writing
+to the same bucket. The dashboard's
 *YouLess* variable switches between them.

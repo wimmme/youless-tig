@@ -17,6 +17,8 @@ services:
     build: .
     container_name: youless-tig
     restart: unless-stopped
+    # Settings youless-tig reads. Compose-only settings (ports, version) are used
+    # elsewhere in this file and do not belong here.
     environment:
       TZ: ${TZ:?set TZ in .env, the time zone of your YouLess (e.g. Europe/Brussels)}
       YOULESS_URL: ${YOULESS_URL:?set YOULESS_URL in .env}
@@ -34,6 +36,9 @@ services:
       INFLUX_WRITE_URL: ${INFLUX_WRITE_URL:-}
       INFLUX_WRITE_TOKEN: ${INFLUX_WRITE_TOKEN:-}
     ports:
+      # <interface>:<port on the host>:<port in the container>. youless-tig always
+      # listens on 8080 inside the container; choose the host port with
+      # YOULESS_TIG_PORT in .env (not under environment: above).
       - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
     # Automatic updates with Watchtower (in label mode): uncomment.
     # labels:

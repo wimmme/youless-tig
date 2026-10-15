@@ -22,6 +22,8 @@ services:
         condition: service_healthy
       telegraf:
         condition: service_started
+    # Settings youless-tig reads. Compose-only settings (ports, version) are used
+    # elsewhere in this file and do not belong here.
     environment:
       TZ: ${TZ:?set TZ in .env, the time zone of your YouLess (e.g. Europe/Brussels)}
       YOULESS_URL: ${YOULESS_URL:?set YOULESS_URL in .env}
@@ -42,6 +44,9 @@ services:
     volumes:
       - secrets:/run/secrets:ro
     ports:
+      # <interface>:<port on the host>:<port in the container>. youless-tig always
+      # listens on 8080 inside the container; choose the host port with
+      # YOULESS_TIG_PORT in .env (not under environment: above).
       - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
     # Automatic updates with Watchtower (in label mode): uncomment.
     # labels:
@@ -92,8 +97,9 @@ services:
       - secrets:/etc/influxdb2/secrets
       - ./influxdb/init:/docker-entrypoint-initdb.d:ro
     ports:
-      # The InfluxDB web UI and API. Bound to localhost by default; set
-      # INFLUXDB_BIND=0.0.0.0 in .env to reach it from your LAN.
+      # The InfluxDB web UI and API: host port INFLUXDB_PORT → 8086 in the container.
+      # Bound to localhost by default; set INFLUXDB_BIND=0.0.0.0 in .env to reach
+      # it from your LAN.
       - "${INFLUXDB_BIND:-127.0.0.1}:${INFLUXDB_PORT:-8086}:8086"
     healthcheck:
       # Healthy once the tokens exist, so the others never start without them.
@@ -132,6 +138,7 @@ services:
       - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
       - secrets:/run/secrets:ro
     ports:
+      # Host port GRAFANA_PORT → 3000 in the container.
       - "${GRAFANA_BIND:-0.0.0.0}:${GRAFANA_PORT:-3000}:3000"
     security_opt: ["no-new-privileges:true"]
     logging: *logging

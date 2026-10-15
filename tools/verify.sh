@@ -13,9 +13,15 @@ sh tools/release-notes.sh --check
 docker build --target test -t youless-tig:test .
 docker build -t youless-tig:dev .
 docker build --target sim -t youless-sim:dev .
-for f in docker-compose.yml docker-compose.stack.yml; do
+fake() {
 	YOULESS_URL=http://youless.example TZ=UTC INFLUX_URL=http://influxdb.example:8086 INFLUX_TOKEN=x \
-		INFLUX_ORG=o INFLUX_BUCKET=b INFLUXDB_ADMIN_PASSWORD=x GRAFANA_ADMIN_PASSWORD=x \
-		docker compose --env-file /dev/null -f "$f" config --quiet
+		INFLUX_ORG=o INFLUX_BUCKET=b INFLUXDB_ADMIN_PASSWORD=x GRAFANA_ADMIN_PASSWORD=x "$@"
+}
+for f in docker-compose.yml docker-compose.stack.yml; do
+	fake docker compose --env-file /dev/null -f "$f" config --quiet
+	# The host port comes from YOULESS_TIG_PORT and maps to 8080 inside.
+	fake env YOULESS_TIG_PORT=8030 docker compose --env-file /dev/null -f "$f" config --format json |
+		tr -d ' \n' | grep -q '"target":8080,"published":"8030"' ||
+		{ echo "$f: YOULESS_TIG_PORT does not map to 8080" >&2; exit 1; }
 done
 echo "verify: OK"
