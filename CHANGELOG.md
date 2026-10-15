@@ -5,6 +5,10 @@ versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-15
+
+First release.
+
 ### Added
 - Reads a YouLess LS120: live readings every 10 seconds (power, P1 import and
   export per tariff, voltage, current and power per phase, the Belgian capacity
@@ -17,3 +21,5 @@ versions follow [Semantic Versioning](https://semver.org/).
   Telegraf, InfluxDB and Grafana, least-privilege tokens created on first start,
   and a provisioned Grafana dashboard.
 - YouLess password support (login with cookie).
+- A log page the YouLess does not answer is tried up to three times, so one lost
+  request does not stop the first read of its history.

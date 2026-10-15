@@ -35,6 +35,9 @@ services:
       INFLUX_WRITE_TOKEN: ${INFLUX_WRITE_TOKEN:-}
     ports:
       - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
+    # Automatic updates with Watchtower (in label mode): uncomment.
+    # labels:
+    #   com.centurylinklabs.watchtower.enable: "true"
     read_only: true
     cap_drop: [ALL]
     security_opt: ["no-new-privileges:true"]
