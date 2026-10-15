@@ -8,6 +8,8 @@
 set -eu
 cd "$(dirname "$0")/.."
 sh tools/release-notes.sh --check
+# InfluxDB runs only executable init scripts and skips the others silently.
+[ -x influxdb/init/10-youless-tig.sh ] || { echo "influxdb/init/10-youless-tig.sh must be executable" >&2; exit 1; }
 docker build --target test -t youless-tig:test .
 docker build -t youless-tig:dev .
 docker build --target sim -t youless-sim:dev .

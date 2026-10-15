@@ -115,6 +115,7 @@ or start over.
 | `youless-tig` keeps restarting or logs `configuration:` | the message lists every missing or wrong setting in `.env` |
 | `poll failed … connection refused / timeout` | `YOULESS_URL`; can the Docker host reach the YouLess (`curl http://<youless>/d`)? |
 | `youless: password required or wrong` | `YOULESS_PASSWORD` |
+| `youless-tig-influxdb` stays *unhealthy*, other containers do not start | the tokens were not created: `influxdb/init/10-youless-tig.sh` must be executable (`chmod +x`, automatic with `git clone`); then `down -v` and start again |
 | `influx write: HTTP 401` | the `secrets` volume does not match InfluxDB (see *Starting over*) |
 | Grafana panels empty, *Data source* error | `docker compose -f docker-compose.stack.yml logs grafana influxdb` |
 | Times in the history are off by one or two hours | `TZ` must be the YouLess's time zone |
