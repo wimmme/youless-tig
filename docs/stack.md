@@ -4,10 +4,14 @@
 
 | Container | Image | Role | Port on the host |
 |---|---|---|---|
-| `youless-tig` | `ghcr.io/wimmme/youless-tig` | reads the YouLess, sends readings to Telegraf, serves the YouLess-compatible API | `YOULESS_TIG_PORT` (8080) |
+| `youless-tig` | `ghcr.io/wimmme/youless-tig` | reads the YouLess, sends readings to Telegraf, serves the YouLess-compatible API | `YOULESS_TIG_PORT` (8030) |
 | `youless-tig-telegraf` | `telegraf:1.40` | receives the readings, buffers them, writes them to InfluxDB | none |
-| `youless-tig-influxdb` | `influxdb:2.9` | stores everything | `INFLUXDB_PORT` (8086), localhost only |
-| `youless-tig-grafana` | `grafana/grafana:13.2` | dashboards | `GRAFANA_PORT` (3000) |
+| `youless-tig-influxdb` | `influxdb:2.9` | stores everything | `INFLUXDB_PORT` (8031), localhost only |
+| `youless-tig-grafana` | `grafana/grafana:13.2` | dashboards | `GRAFANA_PORT` (3030) |
+
+The default host ports avoid the usual 8080, 3000 and 8086, which another
+service on your host may already use. Inside the containers the services keep
+their usual ports; see [configuration.md](configuration.md#ports).
 
 ## Setup
 
@@ -18,17 +22,18 @@
 
    ```sh
    git clone https://github.com/wimmme/youless-tig.git && cd youless-tig
-   cp .env.example .env && chmod 600 .env
+   cp .env.stack.example .env && chmod 600 .env
    ```
 
-3. In `.env`, set at least:
+3. In `.env`, fill in the *Required* part:
    - `YOULESS_URL`: `http://<address of the YouLess>`
    - `TZ`: your time zone, e.g. `Europe/Brussels` or `Europe/Amsterdam`. The
      YouLess logs carry local times without a zone; youless-tig needs this to
      store them correctly.
    - `INFLUXDB_ADMIN_PASSWORD` and `GRAFANA_ADMIN_PASSWORD`: generate them, e.g.
      `openssl rand -base64 24`.
-   - optionally `INFLUX_ORG` and `INFLUX_BUCKET` (default `home` and `youless`).
+   - under *Optional*, if needed: other ports when 8030, 3030 or 8031 are taken
+     on your host, and `INFLUX_ORG` / `INFLUX_BUCKET` (default `home` and `youless`).
 4. Start:
 
    ```sh
@@ -38,10 +43,11 @@
 
    The log shows the channels found (electricity, gas, water) and, within a few
    minutes, `log backfilled` for each of the device's logs.
-5. Open Grafana at `http://<docker host>:3000`, log in as `admin` with
+5. Open Grafana at `http://<docker host>:3030` (`GRAFANA_PORT`), log in as `admin` with
    `GRAFANA_ADMIN_PASSWORD`. The *YouLess* dashboard is the home page.
 
-To type less, put `COMPOSE_FILE=docker-compose.stack.yml` in `.env`; then plain
+To type less, uncomment `COMPOSE_FILE=docker-compose.stack.yml` at the end of
+`.env`; then plain
 `docker compose up -d` uses the stack.
 
 ## What happens on the first start
@@ -68,9 +74,9 @@ InfluxDB; use the InfluxDB UI for that (and keep `INFLUX_ORG`/`INFLUX_BUCKET` in
 
 ## The InfluxDB web UI
 
-InfluxDB is published on `127.0.0.1:8086` only. From another computer use an SSH
-tunnel: `ssh -L 8086:localhost:8086 <docker host>`, then open
-`http://localhost:8086` and log in with `INFLUXDB_ADMIN_USER` and
+InfluxDB is published on `127.0.0.1:8031` only (`INFLUXDB_PORT`). From another
+computer use an SSH tunnel: `ssh -L 8031:localhost:8031 <docker host>`, then open
+`http://localhost:8031` and log in with `INFLUXDB_ADMIN_USER` and
 `INFLUXDB_ADMIN_PASSWORD`. Or set `INFLUXDB_BIND=0.0.0.0` in `.env` to publish it
 on your LAN.
 

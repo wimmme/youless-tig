@@ -1,6 +1,6 @@
 // Package config reads the settings from environment variables. Secrets can be
 // given directly (INFLUX_TOKEN) or as a file (INFLUX_TOKEN_FILE, e.g. a Docker
-// secret), never both. Every variable is listed in .env.example.
+// secret), never both. Every variable is listed in docs/configuration.md.
 package config
 
 import (

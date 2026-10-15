@@ -1,7 +1,7 @@
 # The YouLess-compatible API
 
 youless-tig answers the read endpoints of a YouLess LS120 on its own port
-(`YOULESS_TIG_PORT`, default 8080), in the same formats, so an existing YouLess
+(`YOULESS_TIG_PORT`, default 8030; 8080 inside the container), in the same formats, so an existing YouLess
 client can point at youless-tig instead of the device. Log pages come from
 InfluxDB, so they reach back as far as your data does, not just as far as the
 device's memory.

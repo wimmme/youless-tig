@@ -18,10 +18,11 @@ curl -fsSL https://raw.githubusercontent.com/wimmme/youless-tig/main/.env.exampl
 chmod 600 .env
 ```
 
-In `.env` set `YOULESS_URL`, `TZ`, `INFLUX_URL` (e.g. `http://192.168.1.10:8086`;
-use the container name if InfluxDB runs on the same Docker network),
-`INFLUX_TOKEN`, `INFLUX_ORG` and `INFLUX_BUCKET`. The `[stack]` settings are
-not used. Then:
+In `.env` fill in the *Required* part: `YOULESS_URL`, `TZ`, `INFLUX_URL` (e.g.
+`http://192.168.1.10:8086`; use the container name if InfluxDB runs on the same
+Docker network), `INFLUX_ORG`, `INFLUX_BUCKET` and `INFLUX_TOKEN`. The API is
+published on port 8030; change `YOULESS_TIG_PORT` under *Optional* if that port
+is taken. Then:
 
 ```sh
 docker compose up -d

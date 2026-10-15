@@ -37,20 +37,23 @@ that long history, so any existing YouLess client can use it instead of the devi
 | nothing yet | `docker-compose.stack.yml`: youless-tig, Telegraf, InfluxDB and Grafana, set up and connected | [docs/stack.md](docs/stack.md) |
 | an InfluxDB 2.x (and Grafana) | `docker-compose.yml`: only youless-tig | [docs/existing-influxdb.md](docs/existing-influxdb.md) |
 
-Both read their settings from `.env`; [.env.example](.env.example) lists and explains
-every setting.
+Both read their settings from `.env`. Start from the example for your choice:
+[.env.stack.example](.env.stack.example) or
+[.env.example](.env.example); each lists what you must set
+and what you can set.
 
 ### Quick start: the complete stack
 
 ```sh
 git clone https://github.com/wimmme/youless-tig.git && cd youless-tig
-cp .env.example .env && chmod 600 .env
+cp .env.stack.example .env && chmod 600 .env
 # edit .env: YOULESS_URL, TZ, INFLUXDB_ADMIN_PASSWORD, GRAFANA_ADMIN_PASSWORD
 docker compose -f docker-compose.stack.yml up -d
 ```
 
-Open Grafana on `http://<docker host>:3000` and log in with the admin password
-from `.env`. The *YouLess* dashboard is the home page; the history panels fill
+Open Grafana on `http://<docker host>:3030` and log in with the admin password
+from `.env`. The YouLess-compatible API is on port 8030. Both ports, and InfluxDB's
+8031, can be changed in `.env`. The *YouLess* dashboard is the home page; the history panels fill
 within a few minutes, while youless-tig reads the device's logs.
 
 ### Quick start: with your own InfluxDB

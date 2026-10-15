@@ -1,7 +1,7 @@
 # youless-tig with its own Telegraf, InfluxDB and Grafana: everything in one stack.
 # For an InfluxDB and Grafana you already run, use docker-compose.yml instead.
 #
-#   cp .env.example .env        then fill in the "stack" part of .env
+#   cp .env.stack.example .env && chmod 600 .env           then fill in .env
 #   docker compose -f docker-compose.stack.yml up -d
 #
 # Data flow: YouLess ← youless-tig → Telegraf → InfluxDB ← Grafana
@@ -47,7 +47,7 @@ services:
       # <interface>:<port on the host>:<port in the container>. youless-tig always
       # listens on 8080 inside the container; choose the host port with
       # YOULESS_TIG_PORT in .env (not under environment: above).
-      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
+      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8030}:8080"
     # Automatic updates with Watchtower (in label mode): uncomment.
     # labels:
     #   com.centurylinklabs.watchtower.enable: "true"
@@ -100,7 +100,7 @@ services:
       # The InfluxDB web UI and API: host port INFLUXDB_PORT → 8086 in the container.
       # Bound to localhost by default; set INFLUXDB_BIND=0.0.0.0 in .env to reach
       # it from your LAN.
-      - "${INFLUXDB_BIND:-127.0.0.1}:${INFLUXDB_PORT:-8086}:8086"
+      - "${INFLUXDB_BIND:-127.0.0.1}:${INFLUXDB_PORT:-8031}:8086"
     healthcheck:
       # Healthy once the tokens exist, so the others never start without them.
       test: ["CMD-SHELL", "test -s /etc/influxdb2/secrets/telegraf_listener_token && influx ping"]
@@ -139,7 +139,7 @@ services:
       - secrets:/run/secrets:ro
     ports:
       # Host port GRAFANA_PORT → 3000 in the container.
-      - "${GRAFANA_BIND:-0.0.0.0}:${GRAFANA_PORT:-3000}:3000"
+      - "${GRAFANA_BIND:-0.0.0.0}:${GRAFANA_PORT:-3030}:3000"
     security_opt: ["no-new-privileges:true"]
     logging: *logging
 

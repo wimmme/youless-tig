@@ -2,7 +2,7 @@
 # For a complete stack with its own Telegraf, InfluxDB and Grafana, use
 # docker-compose.stack.yml.
 #
-#   cp .env.example .env        then fill in the "youless-tig" part of .env
+#   cp .env.example .env && chmod 600 .env     then fill in .env
 #   docker compose up -d
 #   docker compose logs -f      the first start reads the YouLess's whole history
 #
@@ -39,7 +39,7 @@ services:
       # <interface>:<port on the host>:<port in the container>. youless-tig always
       # listens on 8080 inside the container; choose the host port with
       # YOULESS_TIG_PORT in .env (not under environment: above).
-      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
+      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8030}:8080"
     # Automatic updates with Watchtower (in label mode): uncomment.
     # labels:
     #   com.centurylinklabs.watchtower.enable: "true"

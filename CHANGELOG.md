@@ -6,9 +6,15 @@ versions follow [Semantic Versioning](https://semver.org/).
 ## [Unreleased]
 
 ### Changed
+- `.env.example` now holds only the settings for youless-tig with your own
+  InfluxDB; the complete stack has its own `.env.stack.example`. Both are split
+  into what you must and what you can set.
+- Default host ports that rarely clash: API 8030, Grafana 3030, InfluxDB 8031
+  (were 8080, 3000 and 8086). Set `YOULESS_TIG_PORT`, `GRAFANA_PORT` or
+  `INFLUXDB_PORT` in `.env` to keep the old ones.
 - Clearer explanation of ports: the API always listens on 8080 inside the
   container, `YOULESS_TIG_PORT` only chooses the port on the Docker host
-  (`.env.example`, both compose files, docs/configuration.md).
+  (the example settings files, both compose files, docs/configuration.md).
 
 ## [0.1.0] - 2026-10-15
 

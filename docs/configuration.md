@@ -1,7 +1,8 @@
 # Configuration
 
 youless-tig reads its settings from environment variables; the compose files
-take them from `.env` ([.env.example](../.env.example)). On a mistake it stops
+take them from `.env`, made from [.env.stack.example](../.env.stack.example) (complete
+stack) or [.env.example](../.env.example) (your own InfluxDB). On a mistake it stops
 and lists every problem at once.
 
 Secrets can also be read from a file (a Docker secret, for instance): set
@@ -33,12 +34,12 @@ them under youless-tig's `environment:`.
 | Variable | Default | |
 |---|---|---|
 | `YOULESS_TIG_VERSION` | `latest` | image tag |
-| `YOULESS_TIG_PORT`, `YOULESS_TIG_BIND` | `8080`, `0.0.0.0` | where the API is published on the host |
+| `YOULESS_TIG_PORT`, `YOULESS_TIG_BIND` | `8030`, `0.0.0.0` | where the API is published on the host |
 | `INFLUXDB_ADMIN_USER`, `INFLUXDB_ADMIN_PASSWORD` | `admin`, required | stack: InfluxDB's first setup |
 | `INFLUXDB_RETENTION` | empty (forever) | stack: retention of the bucket at first setup |
-| `INFLUXDB_PORT`, `INFLUXDB_BIND` | `8086`, `127.0.0.1` | stack: InfluxDB UI |
+| `INFLUXDB_PORT`, `INFLUXDB_BIND` | `8031`, `127.0.0.1` | stack: InfluxDB UI |
 | `GRAFANA_ADMIN_USER`, `GRAFANA_ADMIN_PASSWORD` | `admin`, required | stack: Grafana login |
-| `GRAFANA_PORT`, `GRAFANA_BIND` | `3000`, `0.0.0.0` | stack: Grafana |
+| `GRAFANA_PORT`, `GRAFANA_BIND` | `3030`, `0.0.0.0` | stack: Grafana |
 
 ## Ports
 
@@ -47,21 +48,27 @@ publish it on a port of your Docker host that you choose in `.env`:
 
 | Service | Inside the container | On the host (`.env`) |
 |---|---|---|
-| youless-tig API | 8080 | `YOULESS_TIG_PORT` (default 8080) |
-| InfluxDB (stack) | 8086 | `INFLUXDB_PORT` (default 8086, localhost only) |
-| Grafana (stack) | 3000 | `GRAFANA_PORT` (default 3000) |
+| youless-tig API | 8080 | `YOULESS_TIG_PORT` (default 8030) |
+| InfluxDB (stack) | 8086 | `INFLUXDB_PORT` (default 8031, localhost only) |
+| Grafana (stack) | 3000 | `GRAFANA_PORT` (default 3030) |
 
-With `YOULESS_TIG_PORT=8030` the compose file's line
+The host defaults avoid 8080, 3000 and 8086 on purpose: those are the usual ports
+of many services, so on a host that runs more than this they are often taken.
+
+The compose file's line
 
 ```yaml
     ports:
-      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8080}:8080"
+      - "${YOULESS_TIG_BIND:-0.0.0.0}:${YOULESS_TIG_PORT:-8030}:8080"
 ```
 
-becomes `0.0.0.0:8030:8080`: the API is at `http://<docker host>:8030/e`, while
-youless-tig still listens on 8080 inside. So:
+becomes `0.0.0.0:8030:8080` with the default, or `0.0.0.0:9000:8080` with
+`YOULESS_TIG_PORT=9000`: the API is then at `http://<docker host>:9000/e`, while
+youless-tig still listens on 8080 inside. InfluxDB and Grafana work the same
+way. So:
 
-- To change the port, change only `YOULESS_TIG_PORT` in `.env`, then `docker compose up -d`.
+- To change a port, change only `YOULESS_TIG_PORT`, `GRAFANA_PORT` or
+  `INFLUXDB_PORT` in `.env`, then `docker compose up -d`.
 - Do not add `YOULESS_TIG_PORT` under `environment:`; youless-tig does not read it.
 - Leave `LISTEN` alone in Docker: changing it moves the port inside the container,
   and the `:8080` of the mapping would then point at nothing.
