@@ -2,6 +2,7 @@ package collector
 
 import (
 	"context"
+	"errors"
 	"io"
 	"log/slog"
 	"net/http/httptest"
@@ -313,5 +314,44 @@ func TestRunStopsWithContext(t *testing.T) {
 	}
 	if f.col.Status().LastPoll.IsZero() {
 		t.Error("never polled")
+	}
+}
+
+// flaky fails every nth request with a timeout-like error.
+type flaky struct {
+	Device
+	mu    sync.Mutex
+	n     int
+	every int
+}
+
+func (f *flaky) Get(ctx context.Context, p string) ([]byte, error) {
+	f.mu.Lock()
+	f.n++
+	fail := f.n%f.every == 0
+	f.mu.Unlock()
+	if fail {
+		return nil, errors.New("youless " + p + ": context deadline exceeded")
+	}
+	return f.Device.Get(ctx, p)
+}
+
+// A device that sometimes does not answer still gets backfilled in one go.
+func TestBackfillSurvivesLostRequests(t *testing.T) {
+	retryWait = time.Millisecond
+	f := setup(t, &sim.Sim{}, []youless.Channel{youless.Electricity})
+	f.col.dev = &flaky{Device: f.col.dev, every: 7}
+	ctx := context.Background()
+	if err := f.col.SyncLog(ctx, youless.Electricity, youless.Hour); err != nil {
+		t.Fatalf("backfill with lost requests: %v", err)
+	}
+	if got := logCount(f, youless.Electricity, youless.Hour); got != 69*24+1 {
+		t.Errorf("hour values: %d", got)
+	}
+	// A device that never answers fails after a few attempts.
+	f.col.dev = &flaky{Device: f.col.dev, every: 1}
+	f.clk.Add(2 * time.Hour)
+	if err := f.col.SyncLog(ctx, youless.Electricity, youless.Hour); err == nil {
+		t.Error("want error from a device that never answers")
 	}
 }

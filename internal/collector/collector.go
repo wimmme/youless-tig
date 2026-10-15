@@ -322,7 +322,7 @@ func (c *Collector) syncLocked(ctx context.Context, ch youless.Channel, r youles
 		if r == youless.Day { // pages are month numbers, newest first
 			page = int(time.Date(now.Year(), now.Month()-time.Month(i-1), 1, 0, 0, 0, 0, c.cfg.Loc).Month())
 		}
-		body, err := c.dev.Get(ctx, ch.Path()+"?"+r.Param()+"="+strconv.Itoa(page)+"&f=j")
+		body, err := c.getPage(ctx, ch.Path()+"?"+r.Param()+"="+strconv.Itoa(page)+"&f=j")
 		if errors.Is(err, youless.ErrNotFound) {
 			break
 		}
@@ -359,6 +359,35 @@ func (c *Collector) syncLocked(ctx context.Context, ch youless.Channel, r youles
 	ls.last = newest
 	ls.synced = now
 	return nil
+}
+
+// pageAttempts is how often a log page is tried: the device now and then does
+// not answer a request at all (seen about once in 50 requests on an LS120).
+const pageAttempts = 3
+
+// retryWait is the pause before trying a page again (a variable for tests).
+var retryWait = 2 * time.Second
+
+// getPage reads one log page, trying again after errors other than "not found"
+// and "unauthorised", so one lost request does not cost a whole sync.
+func (c *Collector) getPage(ctx context.Context, pathQuery string) ([]byte, error) {
+	var err error
+	for attempt := 1; attempt <= pageAttempts; attempt++ {
+		var body []byte
+		body, err = c.dev.Get(ctx, pathQuery)
+		if err == nil || errors.Is(err, youless.ErrNotFound) || errors.Is(err, youless.ErrUnauthorized) || ctx.Err() != nil {
+			return body, err
+		}
+		if attempt < pageAttempts {
+			c.log.Debug("log page failed, trying again", "path", pathQuery, "attempt", attempt, "err", err)
+			select {
+			case <-ctx.Done():
+				return nil, ctx.Err()
+			case <-time.After(retryWait):
+			}
+		}
+	}
+	return nil, err
 }
 
 // Refresh reads a log from the device first if it was not read recently; the
